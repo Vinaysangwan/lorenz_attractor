@@ -22,6 +22,15 @@
     (arr).items[(arr).len++] = (val);                                           \
   } while(0)
 
+#define da_reserve(arr, cap)                           \
+  do {                                                 \
+    (arr).items = malloc(sizeof(*(arr).items) * (cap));\
+    (arr).capacity = (cap);                            \
+    (arr).len = 0;                                     \
+  } while(0)
+
+#define MAX_POINTS 20000
+
 // #############################################################################
 //                           structs                                            
 // #############################################################################
@@ -43,12 +52,13 @@ int main(void)
   Camera3D camera = {
     .projection = CAMERA_ORTHOGRAPHIC,
     .fovy = 70.0f,
-    .position = {0.0f, 100.0f, 20.0f},
+    .position = {0.0f, 50.0f, 50.0f},
     .up = {0.0f, 0.0f, 1.0f},
     .target = {0.0f, 0.0f, 20.0f}
   };
 
   Points points = {0};
+  da_reserve(points, MAX_POINTS + 1);
 
   float x = 0.01f;
   float y = 0.0f;
@@ -62,25 +72,34 @@ int main(void)
   {
     UpdateCamera(&camera, CAMERA_ORBITAL);
     
-    float dt = 0.01f;
-    
-    float dx = sig * (y - x);
-    float dy = x * (rho - z) - y;
-    float dz = x * y - beta * z;    
+    // update xyz points
+    if (points.len < MAX_POINTS)
+    {
+      float dt = 0.01f;
+      
+      float dx = sig * (y - x);
+      float dy = x * (rho - z) - y;
+      float dz = x * y - beta * z;    
 
-    x += dx * dt;
-    y += dy * dt;
-    z += dz * dt;
-
-    da_append(points, ((Vector3){x, y, z}));
+      x += dx * dt;
+      y += dy * dt;
+      z += dz * dt;
+      da_append(points, ((Vector3){x, y, z}));
+    }
 
     BeginDrawing();
     ClearBackground(BLACK);
 
     DrawFPS(10, 10);
+    DrawText(TextFormat("Len: %zu, Cap: %zu", points.len, points.capacity), 10, 40, 20, RED);
 
     BeginMode3D(camera);
 
+    DrawLine3D((Vector3){0.0f, 0.0f, 0.0f}, (Vector3){100.0f, 0.0f, 0.0f}, RED);
+    DrawLine3D((Vector3){0.0f, 0.0f, 0.0f}, (Vector3){0.0f, 100.0f, 0.0f}, GREEN);
+    DrawLine3D((Vector3){0.0f, 0.0f, 0.0f}, (Vector3){0.0f, 0.0f, 100.0f}, BLUE);
+
+    // render points
     for (size_t i=1; i<points.len; ++i)
     {
       // DrawPoint3D(p, WHITE);
